@@ -1,0 +1,130 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Log Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <div class="bg"></div>
+    <header class="hero">
+      <div class="hero__content">
+        <div class="kicker">Security Intelligence</div>
+        <h1>Log Analyzer</h1>
+        <p>Upload logs or paste them below to detect brute-force attempts, blacklisted IPs, suspicious URLs, and port scans.</p>
+      </div>
+      <div class="hero__badge">v1</div>
+    </header>
+
+    <main class="grid">
+      <section class="card">
+        <h2>Analyze Logs</h2>
+        {% if error %}
+          <div class="error">{{ error }}</div>
+        {% endif %}
+        <form method="post" enctype="multipart/form-data" class="form">
+          <label class="field">
+            <span>Upload log file</span>
+            <input type="file" name="logfile" accept=".log,.txt" />
+          </label>
+
+          <label class="field">
+            <span>Or paste logs</span>
+            <textarea name="logs" rows="8" placeholder="Paste log lines here..."></textarea>
+          </label>
+
+          <label class="field">
+            <span>Blacklist IPs (optional, one per line)</span>
+            <textarea name="blacklist" rows="4" placeholder="192.0.2.10"></textarea>
+          </label>
+
+          <div class="actions">
+            <button type="submit" class="btn">Analyze</button>
+            <button type="submit" class="btn btn--ghost" formaction="/export">Export JSON</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Summary</h2>
+        {% if result %}
+          <div class="summary">
+            <div class="stat">
+              <div class="stat__label">Total Lines</div>
+              <div class="stat__value">{{ result.summary.total_lines }}</div>
+            </div>
+            <div class="stat">
+              <div class="stat__label">Failed Logins</div>
+              <div class="stat__value">{{ result.summary.failed_logins }}</div>
+            </div>
+            <div class="stat">
+              <div class="stat__label">Unique IPs</div>
+              <div class="stat__value">{{ result.summary.unique_ips }}</div>
+            </div>
+            <div class="stat">
+              <div class="stat__label">Suspicious Events</div>
+              <div class="stat__value">{{ result.summary.suspicious_events }}</div>
+            </div>
+          </div>
+        {% else %}
+          <p class="muted">Run an analysis to see the summary.</p>
+        {% endif %}
+      </section>
+
+      <section class="card">
+        <h2>Top Attacker IPs</h2>
+        {% if result and result.top_ips %}
+          <ul class="list">
+            {% for entry in result.top_ips %}
+              <li><span class="pill">{{ entry.ip }}</span> <span class="count">{{ entry.count }}</span></li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">No attacker IPs detected yet.</p>
+        {% endif %}
+      </section>
+
+      <section class="card">
+        <h2>Alerts</h2>
+        {% if result and result.alerts %}
+          <ul class="alerts">
+            {% for a in result.alerts %}
+              <li>
+                <div class="alert__meta">
+                  <span class="tag">{{ a.kind }}</span>
+                  <span class="ts">{{ a.timestamp }}</span>
+                </div>
+                <div class="alert__body">
+                  <span class="pill">{{ a.ip }}</span>
+                  <span class="detail">{{ a.detail }}</span>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">No alerts yet.</p>
+        {% endif %}
+      </section>
+
+      <section class="card">
+        <h2>Timeline</h2>
+        {% if result and result.timeline %}
+          <ul class="timeline">
+            {% for a in result.timeline %}
+              <li>
+                <div class="dot"></div>
+                <div class="content">
+                  <div class="line">{{ a.timestamp }}</div>
+                  <div class="sub"><strong>{{ a.kind }}</strong> — {{ a.detail }}</div>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">Timeline will appear after analysis.</p>
+        {% endif %}
+      </section>
+    </main>
+  </body>
+</html>
